@@ -11,6 +11,7 @@ contract MultiSigWallet{
     // if(address => 1) means valid owner
     // if(address => 0) means not valid owner anymore
     mapping(address => uint) owners;
+    uint noOfOwners = 1;
     
     struct Transaction { 
             address from;   // who is the sender
@@ -48,7 +49,14 @@ contract MultiSigWallet{
     
     // To add Owners
     function addOwners(address newOwner) Owner public{
+        require(owners[newOwner] != 1); // to check already exist or not with value 1
+        require(owners[newOwner] != 0); // to check already exist or not with value 0
         owners[newOwner] = 1;
+        noOfOwners++; 
+    }
+    
+    function noOfOwner() view public returns(uint){
+        return noOfOwners;
     }
     
     function removeOwner(address removeOwner) public{
@@ -89,7 +97,7 @@ contract MultiSigWallet{
         
         if(transaction.signatureCount >= 3){
             transaction.to.transfer(transaction.value);
-            transaction.isValid = false;  // false means, transaction completed 
+            transaction.isValid = false;  // false means transaction completed 
             }
     }
     
