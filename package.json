@@ -1,0 +1,23 @@
+{
+  "name": "multisigwallet",
+  "version": "1.0.0",
+  "description": "",
+  "main": "truffle-config.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "concurrently \" cd backend && nodemon server.js \" \"cd frontend && npm start \""
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bansaltushar014/MultiSigWallet.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/bansaltushar014/MultiSigWallet/issues"
+  },
+  "homepage": "https://github.com/bansaltushar014/MultiSigWallet#readme"
+}
