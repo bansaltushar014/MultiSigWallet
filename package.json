@@ -19,5 +19,9 @@
   "bugs": {
     "url": "https://github.com/bansaltushar014/MultiSigWallet/issues"
   },
-  "homepage": "https://github.com/bansaltushar014/MultiSigWallet#readme"
+  "homepage": "https://github.com/bansaltushar014/MultiSigWallet#readme",
+  "dependencies": {
+    "axios": "^0.20.0",
+    "concurrently": "^5.3.0"
+  }
 }
