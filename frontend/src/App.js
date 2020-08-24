@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import logo from './logo.svg';
 import './App.css';
 import web3 from './helper.js';
-import { FormControl, FormGroup, ControlLabel, HelpBlock, Checkbox, Radio, Row, Container, Col, Form, Button } from 'react-bootstrap';
+import { FormControl, FormGroup, ControlLabel, HelpBlock, Checkbox, Radio, Row, Container, Col, Form, Button, ThemeProvider } from 'react-bootstrap';
 
 
 const axios = require('axios');
@@ -15,6 +15,7 @@ function App() {
   const [transactionId, settransactionId] = useState('');
   const [balance, setbalance] = useState('');
   const [creator, setcreator] = useState('');
+  const [pendingtrans, setpendingtrans] = useState('');
 
 
   var walletInstance = useRef(0);
@@ -44,6 +45,7 @@ function App() {
         noOfOwners();
         getBalance();
         whoIsCreator();
+        pendingTransactions();
       })
       .catch(function (error) {
         console.log(error);
@@ -104,6 +106,7 @@ function App() {
         .then(r => {
           console.log("Created Successfully!");
           // noOfOwners();
+          pendingTransactions();
         })
         .catch(e => {
           console.log(" Error is " + JSON.stringify(e));
@@ -161,6 +164,7 @@ function App() {
         .then(r => {
           console.log("Successfully signed " + JSON.stringify(r));
           getBalance();
+          pendingTransactions();
         })
         .catch(e => {
           console.log("Error with " + JSON.stringify(e));
@@ -184,18 +188,37 @@ function App() {
       })
   }
 
+  const pendingTransactions = () => {
+    walletInstance.methods.getPendingTransaction().call()
+      .then(result => {
+        setpendingtrans(JSON.stringify(result));
+      })
+  }
+
+  const getTransaction = (e) => {
+    e.preventDefault();
+    walletInstance.methods.getTransaction(value).call()
+    .then(r=> {
+      console.log(r);
+      alert(JSON.stringify(r));
+    })
+  }
+
   return (
     <div>
-      <br></br>
-      <br></br>
-      <Row>
+      <br></br><br></br>
 
+      <Row>
         <Col sm={2}></Col>
         <Col sm={8}>
-
           <h6>Number of validOwners: {noOfOwner}</h6>
           <h6>Balance in the Contract: {balance} ether</h6>
           <h6>Creator is {creator}</h6>
+          {pendingtrans.length > 0 &&
+          <h6>Pending Transactions are at index {pendingtrans}</h6>
+          }
+          
+
           <br></br>
 
           <Form onSubmit={SubmitAddress}>
@@ -205,17 +228,16 @@ function App() {
               <Form.Control onChange={AddressValue} type="text" placeholder="Enter address" />
               <Form.Text className="text-muted">
                 Enter address to create more Owners.
-          </Form.Text>
+              </Form.Text>
             </Form.Group>
             <Button variant="primary" type="submit">
               Submit
-        </Button>
+              </Button>
           </Form>
 
           <br></br>
           <hr></hr>
           <br></br>
-          {/* <button onClick={deposit}>deposit</button> */}
 
           <Form onSubmit={deposit}>
             <Form.Group controlId="formBasicEmail">
@@ -224,11 +246,11 @@ function App() {
               <Form.Control onChange={depositValue} type="text" placeholder="Ether" />
               <Form.Text className="text-muted">
                 Enter the value to deposite in ether
-          </Form.Text>
+              </Form.Text>
             </Form.Group>
             <Button variant="primary" type="submit">
               Submit
-        </Button>
+              </Button>
           </Form>
 
           <br></br>
@@ -242,7 +264,7 @@ function App() {
               <Form.Control onChange={AddressValue} type="text" placeholder="Enter address" />
               <Form.Text className="text-muted">
                 Enter address of Receiver.
-          </Form.Text>
+              </Form.Text>
             </Form.Group>
             <Form.Group controlId="formBasicEmail">
               <Form.Label>Ether to be sent</Form.Label>
@@ -250,11 +272,11 @@ function App() {
               <Form.Control onChange={transferValue} type="text" placeholder="Enter value" />
               <Form.Text className="text-muted">
                 Enter the value.
-          </Form.Text>
+              </Form.Text>
             </Form.Group>
             <Button variant="primary" type="submit">
               Submit
-        </Button>
+              </Button>
           </Form>
 
 
@@ -269,20 +291,37 @@ function App() {
               <Form.Control onChange={transactionValue} type="text" placeholder="Enter address" />
               <Form.Text className="text-muted">
                 Enter Id to signTransaction
-          </Form.Text>
+              </Form.Text>
             </Form.Group>
             <Button variant="primary" type="submit">
               Submit
-        </Button>
+              </Button>
+          </Form>
+          <br></br>
+          <hr></hr>
+          <br></br>
+          <Form onSubmit={getTransaction}>
+            <Form.Group controlId="formBasicEmail">
+              <Form.Label>Pending Transaction at index</Form.Label>
+              <br></br>
+              <Form.Control onChange={transactionValue} type="text" placeholder="Enter address" />
+              <Form.Text className="text-muted">
+                Enter valid Index of pendingTransaction
+              </Form.Text>
+            </Form.Group>
+            <Button variant="primary" type="submit">
+              Submit
+              </Button>
           </Form>
           <br></br>
           <br></br>
         </Col>
         <Col sm={2}></Col>
       </Row>
-
     </div>
   );
 }
 
 export default App;
+
+

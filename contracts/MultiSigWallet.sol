@@ -23,8 +23,9 @@ contract MultiSigWallet{
     }
     
     // Array of struct to keep all transaction
-    Transaction[] pendingTransaction;
+    Transaction[] createdTransaction;
     uint transactionIdx = 0;  // How many transaction have been done? 
+    uint[] pendingTransaction; 
     
     // Condition to give permission to onlyOwners
     modifier onlyOwners {
@@ -81,14 +82,15 @@ contract MultiSigWallet{
         
         transaction.isValid = true;   // Newly created transaction is true, means pending
         
-        pendingTransaction.push(transaction);
+        createdTransaction.push(transaction);
+        pendingTransaction.push(transactionIdx);
         transactionIdx++;
     }
     
     //  To sign the transaction where different address will call 
     // the same function with same parameter value
     function signTransaction(uint id) onlyOwners payable public{
-        Transaction storage transaction = pendingTransaction[id];
+        Transaction storage transaction = createdTransaction[id];
         require(transaction.isValid == true);
         require(address(this).balance >= transaction.value);
         require(transaction.from != msg.sender);
@@ -101,7 +103,43 @@ contract MultiSigWallet{
         if(transaction.signatureCount >= 3){
             transaction.to.transfer(transaction.value);
             transaction.isValid = false;  // false means transaction completed 
+            removeTransaction(id);
             }
+    }
+    
+    function removeTransaction(uint id) public{
+        uint replace = 0;
+        uint i;
+        for( i=0; i< pendingTransaction.length; i++){
+            if(replace == 1){
+                pendingTransaction[i-1] = pendingTransaction[i];
+            }
+            if(pendingTransaction[i]==id){
+                replace = 1;
+            }
+        }
+        delete pendingTransaction[i-1];
+        pendingTransaction.length = pendingTransaction.length -1;
+    }
+    
+    function getPendingTransaction() public returns(uint[] memory){
+        return pendingTransaction; 
+    }
+    
+    
+    function getTransaction(uint id) public onlyOwners returns(address, address, uint, uint, bool) {
+        //  address from;   // who is the sender
+        //     address payable to;   // who is the receiver
+        //     uint value;  // what is the value
+        //     uint signatureCount; // How many people will sign this? 
+        //     mapping(address => uint) signed; // Who has signed it and they are allowed to do it or not
+        //     bool isValid;  // Is it pending or completed.
+             return(
+             createdTransaction[id].from,
+             createdTransaction[id].to, 
+             createdTransaction[id].value,
+             createdTransaction[id].signatureCount,
+             createdTransaction[id].isValid);
     }
     
     
