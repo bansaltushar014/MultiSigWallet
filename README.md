@@ -1,1 +1,17 @@
 ### MultiSigWallet
+It is a multi signature wallet where for any transaction at least 3 valid address are required to sign a transaction. 
+
+### How to start
+
+#### First 
+* Run Ganache
+* Connect Ganache to Metamask at 8545
+
+#### Second
+* git clone 
+* npm install
+* npm start
+
+
+### How to Contribute
+<p>Feel free to create issue and start contibuting :)</p>
