@@ -9,7 +9,7 @@ contract MultiSigWallet{
 
     // Any owner who is legal to participate will decided by this mapping
     // if(address => 1) means valid owner
-    // if(address => 0) means not valid owner anymore
+    // if(address => 2) means not valid owner anymore
     mapping(address => uint) owners;
     uint noOfOwners = 1;
     
@@ -47,10 +47,13 @@ contract MultiSigWallet{
         return owner;
     }
     
+    function getvalue(address ad) view public returns(uint){
+        return owners[ad];
+    }
+    
     // To add Owners
     function addOwners(address newOwner) Owner public{
-        require(owners[newOwner] != 1); // to check already exist or not with value 1
-        require(owners[newOwner] != 0); // to check already exist or not with value 0
+        require(owners[newOwner] != 1);
         owners[newOwner] = 1;
         noOfOwners++; 
     }
@@ -60,7 +63,7 @@ contract MultiSigWallet{
     }
     
     function removeOwner(address removeOwner) public{
-        
+        // to remove it make the flag 2
     }
     
     // To deposit the fund to contract. 

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import logo from './logo.svg';
 import './App.css';
 import web3 from './helper.js';
-import { FormControl, FormGroup, ControlLabel, HelpBlock, Checkbox, Radio, Form, Button } from 'react-bootstrap';
+import { FormControl, FormGroup, ControlLabel, HelpBlock, Checkbox, Radio, Row, Container, Col, Form, Button } from 'react-bootstrap';
 
 
 const axios = require('axios');
@@ -12,6 +12,9 @@ function App() {
   const [address, setAddress] = useState('');
   const [noOfOwner, setnoOfOwner] = useState('');
   const [value, setValue] = useState('');
+  const [transactionId, settransactionId] = useState('');
+  const [balance, setbalance] = useState('');
+  const [creator, setcreator] = useState('');
 
 
   var walletInstance = useRef(0);
@@ -38,8 +41,9 @@ function App() {
         const walletContractAddress = response.data.networks[5777].address;
         walletInstance = new web3.eth.Contract(walletAbi, walletContractAddress);
         // console.log(walletInstance);
-
         noOfOwners();
+        getBalance();
+        whoIsCreator();
       })
       .catch(function (error) {
         console.log(error);
@@ -72,17 +76,19 @@ function App() {
     setValue(event.target.value);
   }
 
-  const SubmitAddress = (e) => {
+  const SubmitAddress = async (e) => {
     e.preventDefault();
     console.log("Inside Form!");
-    walletInstance.methods.addOwners(address).send({ from: '0x38531219411157fC9Fe6Dd80449dc05f06903A9E' })
-      .then(r => {
-        console.log("Created Successfully!");
-        noOfOwners();
-      })
-      .catch(e => {
-        console.log(" Error is " + e);
-      })
+    await metamaskAccount().then(account => {
+      walletInstance.methods.addOwners(address).send({ from: account })
+        .then(r => {
+          console.log("Created Successfully!");
+          noOfOwners();
+        })
+        .catch(e => {
+          console.log(" Error is " + JSON.stringify(e));
+        })
+    });
   }
 
   const transfer = async (e) => {
@@ -90,12 +96,14 @@ function App() {
     console.log("Inside 2 Form!");
 
     await metamaskAccount().then(account => {
-      console.log("Account is " + account + "receiver address is " + address + " value is "+value) ;
+      console.log("Account is " + account + "receiver address is " + address + " value is " + value);
 
-      walletInstance.methods.transferAmount(address, value).send({ from: account })
+      // walletInstance.methods.transferAmount(address, value).send({ from: account })
+      walletInstance.methods.transferAmount(address, web3.utils.toWei(value)).send({ from: account })
+
         .then(r => {
           console.log("Created Successfully!");
-          noOfOwners();
+          // noOfOwners();
         })
         .catch(e => {
           console.log(" Error is " + JSON.stringify(e));
@@ -107,13 +115,31 @@ function App() {
     walletInstance.methods.creator().call()
       .then(r => {
         console.log("Creator is " + r);
+        setcreator(r);
       })
       .catch(e => {
         console.log("Error is " + e);
       })
+  }
 
+  // take the value from the form, not hardcoded value
+  const deposit = async (e) => {
 
-
+    e.preventDefault();
+    await metamaskAccount().then(account => {
+      console.log("address is " + account);
+      walletInstance.methods.deposit().send({
+        from: account,
+        value: web3.utils.toWei(value)
+      })
+        .then(r => {
+          console.log("Deposit success " + r);
+          getBalance();
+        })
+        .catch(e => {
+          console.log("Error is " + JSON.stringify(e));
+        })
+    });
   }
 
   const noOfOwners = () => {
@@ -127,51 +153,133 @@ function App() {
       })
   }
 
+  const signTransaction = async (event) => {
+    event.preventDefault();
 
+    await metamaskAccount().then(account => {
+      walletInstance.methods.signTransaction(transactionId).send({ from: account })
+        .then(r => {
+          console.log("Successfully signed " + JSON.stringify(r));
+          getBalance();
+        })
+        .catch(e => {
+          console.log("Error with " + JSON.stringify(e));
+        })
+    });
+  }
+
+  const transactionValue = (e) => {
+    settransactionId(e.target.value);
+  }
+
+  const depositValue = (e) => {
+    setValue(e.target.value);
+  }
+
+  const getBalance = () => {
+    walletInstance.methods.walletBalance().call()
+      .then(r => {
+        console.log("balance is " + web3.utils.fromWei(r))
+        setbalance(web3.utils.fromWei(r));
+      })
+  }
 
   return (
     <div>
+      <br></br>
+      <br></br>
+      <Row>
 
-      <Form onSubmit={SubmitAddress}>
-        <Form.Group controlId="formBasicEmail">
-          <Form.Label>Address</Form.Label>
-          <Form.Control onChange={AddressValue} type="text" placeholder="Enter address" />
-          <Form.Text className="text-muted">
-            Enter address of Owners.
+        <Col sm={2}></Col>
+        <Col sm={8}>
+
+          <h6>Number of validOwners: {noOfOwner}</h6>
+          <h6>Balance in the Contract: {balance} ether</h6>
+          <h6>Creator is {creator}</h6>
+          <br></br>
+
+          <Form onSubmit={SubmitAddress}>
+            <Form.Group controlId="formBasicEmail">
+              <Form.Label>Create Owners</Form.Label>
+              <br></br>
+              <Form.Control onChange={AddressValue} type="text" placeholder="Enter address" />
+              <Form.Text className="text-muted">
+                Enter address to create more Owners.
           </Form.Text>
-        </Form.Group>
-        <Button variant="primary" type="submit">
-          Submit
+            </Form.Group>
+            <Button variant="primary" type="submit">
+              Submit
         </Button>
-      </Form>
+          </Form>
 
-      <button onClick={whoIsCreator}>Creator</button>
+          <br></br>
+          <hr></hr>
+          <br></br>
+          {/* <button onClick={deposit}>deposit</button> */}
 
-      <h3>count is {noOfOwner}</h3>
-      <br></br>
-      <br></br>
-      <br></br>
-      <br></br>
-
-      <Form onSubmit={transfer}>
-        <Form.Group controlId="formBasicEmail">
-          <Form.Label>Address</Form.Label>
-          <Form.Control onChange={AddressValue} type="text" placeholder="Enter address" />
-          <Form.Text className="text-muted">
-            Enter address of Owners.
+          <Form onSubmit={deposit}>
+            <Form.Group controlId="formBasicEmail">
+              <Form.Label>Ether to deposit</Form.Label>
+              <br></br>
+              <Form.Control onChange={depositValue} type="text" placeholder="Ether" />
+              <Form.Text className="text-muted">
+                Enter the value to deposite in ether
           </Form.Text>
-        </Form.Group>
-        <Form.Group controlId="formBasicEmail">
-          <Form.Label>Value</Form.Label>
-          <Form.Control onChange={transferValue} type="text" placeholder="Enter value" />
-          <Form.Text className="text-muted">
-            Enter the value.
-          </Form.Text>
-        </Form.Group>
-        <Button variant="primary" type="submit">
-          Submit
+            </Form.Group>
+            <Button variant="primary" type="submit">
+              Submit
         </Button>
-      </Form>
+          </Form>
+
+          <br></br>
+          <hr></hr>
+          <br></br>
+
+          <Form onSubmit={transfer}>
+            <Form.Group controlId="formBasicEmail">
+              <Form.Label>Transfer || Create a transaction</Form.Label>
+              <br></br>
+              <Form.Control onChange={AddressValue} type="text" placeholder="Enter address" />
+              <Form.Text className="text-muted">
+                Enter address of Receiver.
+          </Form.Text>
+            </Form.Group>
+            <Form.Group controlId="formBasicEmail">
+              <Form.Label>Ether to be sent</Form.Label>
+              <br></br>
+              <Form.Control onChange={transferValue} type="text" placeholder="Enter value" />
+              <Form.Text className="text-muted">
+                Enter the value.
+          </Form.Text>
+            </Form.Group>
+            <Button variant="primary" type="submit">
+              Submit
+        </Button>
+          </Form>
+
+
+          <br></br>
+          <hr></hr>
+          <br></br>
+
+          <Form onSubmit={signTransaction}>
+            <Form.Group controlId="formBasicEmail">
+              <Form.Label>Sign the Transaction</Form.Label>
+              <br></br>
+              <Form.Control onChange={transactionValue} type="text" placeholder="Enter address" />
+              <Form.Text className="text-muted">
+                Enter Id to signTransaction
+          </Form.Text>
+            </Form.Group>
+            <Button variant="primary" type="submit">
+              Submit
+        </Button>
+          </Form>
+          <br></br>
+          <br></br>
+        </Col>
+        <Col sm={2}></Col>
+      </Row>
 
     </div>
   );
