@@ -11,6 +11,7 @@ contract MultiSigWallet{
     // if(address => 1) means valid owner
     // if(address => 2) means not valid owner anymore
     mapping(address => uint) owners;
+    address[] addedOwners;
     uint noOfOwners = 1;
     
     struct Transaction { 
@@ -56,6 +57,7 @@ contract MultiSigWallet{
     function addOwners(address newOwner) Owner public{
         require(owners[newOwner] != 1);
         owners[newOwner] = 1;
+        addedOwners.push(newOwner);
         noOfOwners++; 
     }
     
@@ -63,8 +65,13 @@ contract MultiSigWallet{
         return noOfOwners;
     }
     
-    function removeOwner(address removeOwner) public{
+    function getAddedOwners() view Owner public returns(address[] memory){
+        return addedOwners;
+    }
+    
+    function removeOwner(address removeOwner) Owner public{
         // to remove it make the flag 2
+        owners[removeOwner] = 2;
     }
     
     // To deposit the fund to contract. 
