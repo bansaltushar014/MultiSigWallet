@@ -8,8 +8,13 @@
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "concurrently \" cd backend && nodemon server.js \" \"cd frontend  && npm install && npm start \""
+    "start": "concurrently \" cd backend && nodemon server.js \" \"cd frontend  && npm install && npm start \"",
+    "build": "cd frontend  && npm install && npm run build"
   },
+  "cacheDirectories": [
+    "node_modules",
+    "frontend/node_modules"
+  ],
   "repository": {
     "type": "git",
     "url": "git+https://github.com/bansaltushar014/MultiSigWallet.git"
