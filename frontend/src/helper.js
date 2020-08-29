@@ -10,7 +10,9 @@ const Initialize = {
             window.ethereum.enable();
           } else {
             console.log("called");
-            this.web3 = new Web3(new Web3.providers.HttpProvider("HTTP://127.0.0.1:7545"));
+            // this.web3 = new Web3(new Web3.providers.HttpProvider("HTTP://127.0.0.1:7545"));
+            this.web3 = new Web3(new Web3.providers.HttpProvider("https://ropsten.infura.io/v3/cdfba71cda344898bfcfeaee923cf849"));
+            
           }
     }
 }

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import logo from './logo.svg';
 import './App.css';
 import web3 from './helper.js';
-import { FormControl, FormGroup, ControlLabel, HelpBlock, Checkbox, Radio, Row, Container, Col, Form, Button, ThemeProvider } from 'react-bootstrap';
+import { FormControl, FormGroup, ControlLabel, Modal, Spinner, HelpBlock, Checkbox, Radio, Row, Container, Col, Form, Button, ThemeProvider } from 'react-bootstrap';
 
 
 const axios = require('axios');
@@ -13,15 +13,20 @@ function App() {
   const [noOfOwner, setnoOfOwner] = useState('');
   const [value, setValue] = useState('');
   const [transactionId, settransactionId] = useState('');
-  const [balance, setbalance] = useState('');
+  const [balance, setbalance] = useState(''); // to get the balance
   const [creator, setcreator] = useState('');
-  const [pendingtrans, setpendingtrans] = useState('');
+  const [pendingtrans, setpendingtrans] = useState(''); 
+  const [show, setshow] = useState(false);  // to show the modal
 
+  var walletInstance = useRef(0);  
 
-  var walletInstance = useRef(0);
+  const handleClose = () => setshow(false);
+
+  const doNothing = () => {}; // Modal onHide do nothing. 
 
   useEffect(() => {
     try {
+
       if (!web3.eth.net.isListening()) {
         console.log("Not connected");
       } else {
@@ -34,24 +39,25 @@ function App() {
     }
   });
 
+  // Initialize te contract
   const InitializeContract = () => {
     axios.get('http://localhost:4000/static/MultiSigWallet.json')
       .then(function (response) {
-        // console.log(response.data);
         const walletAbi = response.data.abi;
-        const walletContractAddress = response.data.networks[5777].address;
+        const walletContractAddress = response.data.networks[3].address;
         walletInstance = new web3.eth.Contract(walletAbi, walletContractAddress);
-        // console.log(walletInstance);
         noOfOwners();
         getBalance();
         whoIsCreator();
         pendingTransactions();
+
       })
       .catch(function (error) {
         console.log(error);
       });
   }
 
+  // To retrieve Active account in metamask
   const metamaskAccount = () => {
     var promise = new Promise(function (resolve, reject) {
       web3.eth.getAccounts()
@@ -63,9 +69,7 @@ function App() {
           reject();
         })
     })
-
     return promise;
-
   }
 
   const AddressValue = (event) => {
@@ -78,34 +82,36 @@ function App() {
     setValue(event.target.value);
   }
 
-  const SubmitAddress = async (e) => {
+  // To add more validators 
+  const CreateOwners = async (e) => {
     e.preventDefault();
     console.log("Inside Form!");
     await metamaskAccount().then(account => {
+      setshow(true);
       walletInstance.methods.addOwners(address).send({ from: account })
         .then(r => {
+          setshow(false);
           console.log("Created Successfully!");
           noOfOwners();
         })
         .catch(e => {
+          setshow(false);
           console.log(" Error is " + JSON.stringify(e));
         })
     });
   }
 
+
   const transfer = async (e) => {
     e.preventDefault();
     console.log("Inside 2 Form!");
-
     await metamaskAccount().then(account => {
+      setshow(true);
       console.log("Account is " + account + "receiver address is " + address + " value is " + value);
-
-      // walletInstance.methods.transferAmount(address, value).send({ from: account })
       walletInstance.methods.transferAmount(address, web3.utils.toWei(value)).send({ from: account })
-
         .then(r => {
+          setshow(false);
           console.log("Created Successfully!");
-          // noOfOwners();
           pendingTransactions();
         })
         .catch(e => {
@@ -117,6 +123,7 @@ function App() {
   const whoIsCreator = async () => {
     walletInstance.methods.creator().call()
       .then(r => {
+        // setshow(false);
         console.log("Creator is " + r);
         setcreator(r);
       })
@@ -125,26 +132,29 @@ function App() {
       })
   }
 
-  // take the value from the form, not hardcoded value
+   // Deposit the amount to smart contract
   const deposit = async (e) => {
-
     e.preventDefault();
     await metamaskAccount().then(account => {
+      setshow(true);
       console.log("address is " + account);
       walletInstance.methods.deposit().send({
         from: account,
         value: web3.utils.toWei(value)
       })
         .then(r => {
-          console.log("Deposit success " + r);
+          setshow(false);
+          console.log("Deposit success " + JSON.stringify(r));
           getBalance();
         })
         .catch(e => {
+          setshow(false);
           console.log("Error is " + JSON.stringify(e));
         })
     });
   }
 
+  // To know the number of valid owners
   const noOfOwners = () => {
     walletInstance.methods.noOfOwner().call()
       .then(r => {
@@ -160,13 +170,16 @@ function App() {
     event.preventDefault();
 
     await metamaskAccount().then(account => {
+      setshow(true);
       walletInstance.methods.signTransaction(transactionId).send({ from: account })
         .then(r => {
+          setshow(false);
           console.log("Successfully signed " + JSON.stringify(r));
           getBalance();
           pendingTransactions();
         })
         .catch(e => {
+          setshow(false);
           console.log("Error with " + JSON.stringify(e));
         })
     });
@@ -181,10 +194,16 @@ function App() {
   }
 
   const getBalance = () => {
+    // setshow(true);
     walletInstance.methods.walletBalance().call()
       .then(r => {
+        // setshow(false);
         console.log("balance is " + web3.utils.fromWei(r))
         setbalance(web3.utils.fromWei(r));
+      })
+      .catch(e => {
+        // setshow(false);
+        console.log(e);
       })
   }
 
@@ -193,21 +212,63 @@ function App() {
       .then(result => {
         setpendingtrans(JSON.stringify(result));
       })
+      .catch(e => {
+        console.log(e);
+      })
   }
 
   const getTransaction = (e) => {
+    setshow(true);
     e.preventDefault();
     walletInstance.methods.getTransaction(value).call()
-    .then(r=> {
-      console.log(r);
-      alert(JSON.stringify(r));
-    })
+      .then(r => {
+        setshow(false);
+        console.log(r);
+        alert(JSON.stringify(r));
+      })
+      .catch(e=> {
+        setshow(false);
+        console.log(e);
+      })
+  }
+
+  // To remove the added owners
+  const remove = async (e) => {
+    setshow(true);
+    console.log("Inside Remove!");
+    e.preventDefault();
+    await metamaskAccount().then(account => {
+      walletInstance.methods.removeOwner(address).send({ from: account })
+        .then(r => {
+          setshow(false);
+          console.log(r);
+          alert(JSON.stringify(r));
+        })
+        .catch(e=> {
+          setshow(false);
+          console.log(e);
+        })
+    });
+  }
+
+  // Giving Error
+  const getValidOwnersList = () => {
+    setshow(true);
+    walletInstance.methods.getAddedOwners().call()
+      .then(r => {
+        setshow(false);
+        alert(r);
+      })
+      .catch(e => {
+        setshow(false);
+        console.log(e);
+      })
   }
 
   return (
     <div>
-      <br></br><br></br>
 
+      <br></br><br></br>
       <Row>
         <Col sm={2}></Col>
         <Col sm={8}>
@@ -215,24 +276,24 @@ function App() {
           <h6>Balance in the Contract: {balance} ether</h6>
           <h6>Creator is {creator}</h6>
           {pendingtrans.length > 0 &&
-          <h6>Pending Transactions are at index {pendingtrans}</h6>
+            <h6>Pending Transactions are at index {pendingtrans}</h6>
           }
-          
+
 
           <br></br>
 
-          <Form onSubmit={SubmitAddress}>
+          <Form onSubmit={CreateOwners}>
             <Form.Group controlId="formBasicEmail">
               <Form.Label>Create Owners</Form.Label>
               <br></br>
               <Form.Control onChange={AddressValue} type="text" placeholder="Enter address" />
               <Form.Text className="text-muted">
                 Enter address to create more Owners.
-              </Form.Text>
+	  </Form.Text>
             </Form.Group>
             <Button variant="primary" type="submit">
               Submit
-              </Button>
+	  </Button>
           </Form>
 
           <br></br>
@@ -246,11 +307,29 @@ function App() {
               <Form.Control onChange={depositValue} type="text" placeholder="Ether" />
               <Form.Text className="text-muted">
                 Enter the value to deposite in ether
-              </Form.Text>
+	  </Form.Text>
             </Form.Group>
             <Button variant="primary" type="submit">
               Submit
-              </Button>
+	  </Button>
+          </Form>
+
+          <br></br>
+          <hr></hr>
+          <br></br>
+
+          <Form onSubmit={remove}>
+            <Form.Group controlId="formBasicEmail">
+              <Form.Label>Address to Remove as owner</Form.Label>
+              <br></br>
+              <Form.Control onChange={AddressValue} type="text" placeholder="Address to Remove" />
+              <Form.Text className="text-muted">
+                Enter the address to remove.
+	  </Form.Text>
+            </Form.Group>
+            <Button variant="primary" type="submit">
+              Submit
+	  </Button>
           </Form>
 
           <br></br>
@@ -264,7 +343,7 @@ function App() {
               <Form.Control onChange={AddressValue} type="text" placeholder="Enter address" />
               <Form.Text className="text-muted">
                 Enter address of Receiver.
-              </Form.Text>
+	  </Form.Text>
             </Form.Group>
             <Form.Group controlId="formBasicEmail">
               <Form.Label>Ether to be sent</Form.Label>
@@ -272,11 +351,11 @@ function App() {
               <Form.Control onChange={transferValue} type="text" placeholder="Enter value" />
               <Form.Text className="text-muted">
                 Enter the value.
-              </Form.Text>
+	  </Form.Text>
             </Form.Group>
             <Button variant="primary" type="submit">
               Submit
-              </Button>
+	  </Button>
           </Form>
 
 
@@ -291,11 +370,11 @@ function App() {
               <Form.Control onChange={transactionValue} type="text" placeholder="Enter address" />
               <Form.Text className="text-muted">
                 Enter Id to signTransaction
-              </Form.Text>
+	  </Form.Text>
             </Form.Group>
             <Button variant="primary" type="submit">
               Submit
-              </Button>
+	  </Button>
           </Form>
           <br></br>
           <hr></hr>
@@ -307,21 +386,26 @@ function App() {
               <Form.Control onChange={transactionValue} type="text" placeholder="Enter address" />
               <Form.Text className="text-muted">
                 Enter valid Index of pendingTransaction
-              </Form.Text>
+	  </Form.Text>
             </Form.Group>
             <Button variant="primary" type="submit">
               Submit
-              </Button>
+	  </Button>
           </Form>
           <br></br>
           <br></br>
         </Col>
         <Col sm={2}></Col>
       </Row>
+
+      <Modal show={show} onHide={doNothing}>
+        <Modal.Body>
+          <Spinner animation="border" /> &nbsp;&nbsp;
+		Waiting for the transaction!
+	  </Modal.Body>
+      </Modal>
     </div>
   );
 }
 
 export default App;
-
-
