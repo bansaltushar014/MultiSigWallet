@@ -3,7 +3,7 @@ import logo from './logo.svg';
 import './App.css';
 import web3 from './helper.js';
 import { FormControl, FormGroup, ControlLabel, Modal, Spinner, HelpBlock, Checkbox, Radio, Row, Container, Col, Form, Button, ThemeProvider } from 'react-bootstrap';
-
+import OwnerListModal from './ownersListModal';
 
 const axios = require('axios');
 
@@ -15,14 +15,16 @@ function App() {
   const [transactionId, settransactionId] = useState('');
   const [balance, setbalance] = useState(''); // to get the balance
   const [creator, setcreator] = useState('');
-  const [pendingtrans, setpendingtrans] = useState(''); 
+  const [pendingtrans, setpendingtrans] = useState('');
   const [show, setshow] = useState(false);  // to show the modal
+  const [addedOwners, setaddedOwners] = useState([]);
+  const [tryaddedOwners, settryaddedOwners] = useState(["one", "two"]);
 
-  var walletInstance = useRef(0);  
+  var walletInstance = useRef(0);
 
   const handleClose = () => setshow(false);
 
-  const doNothing = () => {}; // Modal onHide do nothing. 
+  const doNothing = () => {}; // Modal onHide do nothing.
 
   useEffect(() => {
     try {
@@ -33,6 +35,7 @@ function App() {
         console.log("connected");
         InitializeContract();
 
+
       }
     } catch (e) {
       console.log("Exception is " + JSON.stringify(e));
@@ -41,18 +44,22 @@ function App() {
 
   // Initialize te contract
   const InitializeContract = () => {
+    // debugger;
+    // setshow(true);
     axios.get('http://localhost:4000/static/MultiSigWallet.json')
       .then(function (response) {
+        // setshow(false);
         const walletAbi = response.data.abi;
-        const walletContractAddress = response.data.networks[3].address;
+        const walletContractAddress = response.data.networks[5777].address;
         walletInstance = new web3.eth.Contract(walletAbi, walletContractAddress);
         noOfOwners();
         getBalance();
         whoIsCreator();
         pendingTransactions();
-
+        getValidOwnersList();
       })
       .catch(function (error) {
+        // setshow(false);
         console.log(error);
       });
   }
@@ -82,7 +89,7 @@ function App() {
     setValue(event.target.value);
   }
 
-  // To add more validators 
+  // To add more validators
   const CreateOwners = async (e) => {
     e.preventDefault();
     console.log("Inside Form!");
@@ -162,6 +169,7 @@ function App() {
         setnoOfOwner(r);
       })
       .catch(e => {
+        setshow(false);
         console.log(e);
       })
   }
@@ -202,7 +210,7 @@ function App() {
         setbalance(web3.utils.fromWei(r));
       })
       .catch(e => {
-        // setshow(false);
+        setshow(false);
         console.log(e);
       })
   }
@@ -213,6 +221,7 @@ function App() {
         setpendingtrans(JSON.stringify(result));
       })
       .catch(e => {
+        setshow(false);
         console.log(e);
       })
   }
@@ -251,18 +260,25 @@ function App() {
     });
   }
 
-  // Giving Error
-  const getValidOwnersList = () => {
-    setshow(true);
-    walletInstance.methods.getAddedOwners().call()
+  // Get the list of valid Owners // Throwing error
+  const getValidOwnersList = async () => {
+    // setshow(true);
+    await walletInstance.methods.getAddedOwners().call()
       .then(r => {
-        setshow(false);
-        alert(r);
+        console.log(r);
+        setaddedOwners(r);
+        // alert(r);
+        console.log("ValidOwners Are " + JSON.stringify(r));
       })
       .catch(e => {
-        setshow(false);
         console.log(e);
       })
+  }
+
+  const testvalue = () => {
+    console.log(addedOwners);
+    console.log(tryaddedOwners);
+
   }
 
   return (
@@ -278,8 +294,11 @@ function App() {
           {pendingtrans.length > 0 &&
             <h6>Pending Transactions are at index {pendingtrans}</h6>
           }
+          <br></br>
 
-
+          // <OwnerListModal data={addedOwners}/>
+          <br></br>
+          <br></br>
           <br></br>
 
           <Form onSubmit={CreateOwners}>
