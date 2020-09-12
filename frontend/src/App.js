@@ -24,7 +24,7 @@ function App() {
 
   const handleClose = () => setshow(false);
 
-  const doNothing = () => {}; // Modal onHide do nothing.
+  const doNothing = () => { }; // Modal onHide do nothing.
 
   useEffect(() => {
     try {
@@ -53,10 +53,11 @@ function App() {
         const walletContractAddress = response.data.networks[5777].address;
         walletInstance = new web3.eth.Contract(walletAbi, walletContractAddress);
         noOfOwners();
+        // getValidOwnersList();
         getBalance();
         whoIsCreator();
         pendingTransactions();
-        getValidOwnersList();
+
       })
       .catch(function (error) {
         // setshow(false);
@@ -92,10 +93,11 @@ function App() {
   // To add more validators
   const CreateOwners = async (e) => {
     e.preventDefault();
+    e.target.reset();
     console.log("Inside Form!");
     await metamaskAccount().then(account => {
       setshow(true);
-      walletInstance.methods.addOwners(address).send({ from: account })
+      walletInstance.methods.addOwners(address).send({ from: account, gas: 300000 })
         .then(r => {
           setshow(false);
           console.log("Created Successfully!");
@@ -111,11 +113,12 @@ function App() {
 
   const transfer = async (e) => {
     e.preventDefault();
+    e.target.reset();
     console.log("Inside 2 Form!");
     await metamaskAccount().then(account => {
       setshow(true);
       console.log("Account is " + account + "receiver address is " + address + " value is " + value);
-      walletInstance.methods.transferAmount(address, web3.utils.toWei(value)).send({ from: account })
+      walletInstance.methods.transferAmount(address, web3.utils.toWei(value)).send({ from: account, gas: 300000 })
         .then(r => {
           setshow(false);
           console.log("Created Successfully!");
@@ -128,6 +131,7 @@ function App() {
   }
 
   const whoIsCreator = async () => {
+    console.log("inside whoIsCreator!");
     walletInstance.methods.creator().call()
       .then(r => {
         // setshow(false);
@@ -139,15 +143,20 @@ function App() {
       })
   }
 
-   // Deposit the amount to smart contract
+  // Deposit the amount to smart contract
   const deposit = async (e) => {
+    // debugger;
+    console.log("Inside Deposit!");
+    console.log(walletInstance);
     e.preventDefault();
+    e.target.reset();
     await metamaskAccount().then(account => {
       setshow(true);
       console.log("address is " + account);
       walletInstance.methods.deposit().send({
         from: account,
-        value: web3.utils.toWei(value)
+        value: web3.utils.toWei(value),
+        gas: 300000
       })
         .then(r => {
           setshow(false);
@@ -163,6 +172,7 @@ function App() {
 
   // To know the number of valid owners
   const noOfOwners = () => {
+    console.log("Inside noOfOwners!");
     walletInstance.methods.noOfOwner().call()
       .then(r => {
         console.log("Number of Owners" + r);
@@ -179,7 +189,7 @@ function App() {
 
     await metamaskAccount().then(account => {
       setshow(true);
-      walletInstance.methods.signTransaction(transactionId).send({ from: account })
+      walletInstance.methods.signTransaction(transactionId).send({ from: account, gas: 300000 })
         .then(r => {
           setshow(false);
           console.log("Successfully signed " + JSON.stringify(r));
@@ -203,6 +213,7 @@ function App() {
 
   const getBalance = () => {
     // setshow(true);
+    console.log("inside getBalance");
     walletInstance.methods.walletBalance().call()
       .then(r => {
         // setshow(false);
@@ -216,6 +227,7 @@ function App() {
   }
 
   const pendingTransactions = () => {
+    console.log("Inside pendingTransactions!");
     walletInstance.methods.getPendingTransaction().call()
       .then(result => {
         setpendingtrans(JSON.stringify(result));
@@ -227,15 +239,17 @@ function App() {
   }
 
   const getTransaction = (e) => {
+    // debugger;
     setshow(true);
     e.preventDefault();
+    e.target.reset();
     walletInstance.methods.getTransaction(value).call()
       .then(r => {
         setshow(false);
         console.log(r);
         alert(JSON.stringify(r));
       })
-      .catch(e=> {
+      .catch(e => {
         setshow(false);
         console.log(e);
       })
@@ -246,14 +260,15 @@ function App() {
     setshow(true);
     console.log("Inside Remove!");
     e.preventDefault();
+    e.target.reset();
     await metamaskAccount().then(account => {
-      walletInstance.methods.removeOwner(address).send({ from: account })
+      walletInstance.methods.removeOwner(address).send({ from: account, gas: 300000 })
         .then(r => {
           setshow(false);
           console.log(r);
-          alert(JSON.stringify(r));
+          // alert(JSON.stringify(r));
         })
-        .catch(e=> {
+        .catch(e => {
           setshow(false);
           console.log(e);
         })
@@ -261,9 +276,9 @@ function App() {
   }
 
   // Get the list of valid Owners // Throwing error
-  const getValidOwnersList = async () => {
-    // setshow(true);
-    await walletInstance.methods.getAddedOwners().call()
+  const getValidOwnersList = () => {
+    console.log("Inside getValidOwnersList");
+    walletInstance.methods.getAddedOwners().call()
       .then(r => {
         console.log(r);
         setaddedOwners(r);
@@ -278,7 +293,6 @@ function App() {
   const testvalue = () => {
     console.log(addedOwners);
     console.log(tryaddedOwners);
-
   }
 
   return (
@@ -295,8 +309,11 @@ function App() {
             <h6>Pending Transactions are at index {pendingtrans}</h6>
           }
           <br></br>
+          <div onClick={getValidOwnersList}>
+            <OwnerListModal data={addedOwners} />
+          </div>
+          {/*<button onClick={getValidOwnersList}>OwnerList</button>*/}
 
-          // <OwnerListModal data={addedOwners}/>
           <br></br>
           <br></br>
           <br></br>
@@ -308,11 +325,11 @@ function App() {
               <Form.Control onChange={AddressValue} type="text" placeholder="Enter address" />
               <Form.Text className="text-muted">
                 Enter address to create more Owners.
-	  </Form.Text>
+	               </Form.Text>
             </Form.Group>
             <Button variant="primary" type="submit">
               Submit
-	  </Button>
+	             </Button>
           </Form>
 
           <br></br>
@@ -326,11 +343,11 @@ function App() {
               <Form.Control onChange={depositValue} type="text" placeholder="Ether" />
               <Form.Text className="text-muted">
                 Enter the value to deposite in ether
-	  </Form.Text>
+	            </Form.Text>
             </Form.Group>
             <Button variant="primary" type="submit">
               Submit
-	  </Button>
+	          </Button>
           </Form>
 
           <br></br>
@@ -344,11 +361,11 @@ function App() {
               <Form.Control onChange={AddressValue} type="text" placeholder="Address to Remove" />
               <Form.Text className="text-muted">
                 Enter the address to remove.
-	  </Form.Text>
+	               </Form.Text>
             </Form.Group>
             <Button variant="primary" type="submit">
               Submit
-	  </Button>
+	             </Button>
           </Form>
 
           <br></br>
@@ -362,7 +379,7 @@ function App() {
               <Form.Control onChange={AddressValue} type="text" placeholder="Enter address" />
               <Form.Text className="text-muted">
                 Enter address of Receiver.
-	  </Form.Text>
+	            </Form.Text>
             </Form.Group>
             <Form.Group controlId="formBasicEmail">
               <Form.Label>Ether to be sent</Form.Label>
@@ -370,11 +387,11 @@ function App() {
               <Form.Control onChange={transferValue} type="text" placeholder="Enter value" />
               <Form.Text className="text-muted">
                 Enter the value.
-	  </Form.Text>
+	            </Form.Text>
             </Form.Group>
             <Button variant="primary" type="submit">
               Submit
-	  </Button>
+	          </Button>
           </Form>
 
 
@@ -389,11 +406,11 @@ function App() {
               <Form.Control onChange={transactionValue} type="text" placeholder="Enter address" />
               <Form.Text className="text-muted">
                 Enter Id to signTransaction
-	  </Form.Text>
+	            </Form.Text>
             </Form.Group>
             <Button variant="primary" type="submit">
               Submit
-	  </Button>
+	          </Button>
           </Form>
           <br></br>
           <hr></hr>
@@ -402,17 +419,18 @@ function App() {
             <Form.Group controlId="formBasicEmail">
               <Form.Label>Pending Transaction at index</Form.Label>
               <br></br>
-              <Form.Control onChange={transactionValue} type="text" placeholder="Enter address" />
+              <Form.Control onChange={depositValue} type="text" placeholder="Enter address" />
               <Form.Text className="text-muted">
                 Enter valid Index of pendingTransaction
-	  </Form.Text>
+	            </Form.Text>
             </Form.Group>
             <Button variant="primary" type="submit">
               Submit
-	  </Button>
+	          </Button>
           </Form>
           <br></br>
           <br></br>
+
         </Col>
         <Col sm={2}></Col>
       </Row>
