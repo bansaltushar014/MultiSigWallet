@@ -5,11 +5,14 @@ It is a multi signature wallet where for any transaction at least 3 valid addres
 
 #### First 
 * Run Ganache
-* Connect Ganache to Metamask at 8545
+* Connect Ganache to Metamask at 7545
 
 #### Second
 * git clone 
+* cd MultiSigWallet
 * npm install
+* cd frontend && npm install
+* cd ..
 * npm start
 
 
