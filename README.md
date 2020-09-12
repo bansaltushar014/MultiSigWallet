@@ -1,6 +1,9 @@
 ### MultiSigWallet
 It is a multi signature wallet where for any transaction at least 3 valid address are required to sign a transaction. 
 
+### Idea 
+[Visit](https://github.com/bansaltushar014/MultiSigWallet/wiki/MultiSigWallet)
+
 ### How to start
 
 #### First 
