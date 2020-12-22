@@ -26,6 +26,4 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use('/static', express.static(path.join(__dirname, '../build/contracts')));
 
 
-
-
 app.listen(port, () => console.log(`Listening on port ${port}`));
