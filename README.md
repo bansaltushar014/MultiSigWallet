@@ -13,8 +13,8 @@ It is a multi signature wallet where for any transaction at least 3 valid addres
 #### Second
 * git clone 
 * cd MultiSigWallet
-* truffle compile
-* truffle migrate
+* npx truffle compile
+* npx truffle migrate
 * npm install
 * cd frontend && npm install
 * cd ..
